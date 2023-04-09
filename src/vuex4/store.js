@@ -1,66 +1,32 @@
-import { reactive, computed } from 'vue'
-import { forEachValue } from "./utils"
+import { reactive } from 'vue'
 import { storeKey } from './injectKey'
+import { ModuleCollection } from './module/module-collection'
 
-class Module {
-  constructor(rawModule) {
-    this._raw = rawModule
-    this._children = {}
-    this.state = rawModule.state
+function installModule(store, rootState, path, module) {
+  let isRoot = !path.length
+
+  if (!isRoot) {
+    let parentState = path.slice(0, -1).reduce((state, key) => {
+      return state[key]
+    }, rootState)
+    parentState[path[path.length - 1]] = module.state
   }
 
-  addChild(key, module) {
-    this._children[key] = module
-  }
-
-  getChild(key) {
-    return this._children[key]
-  }
-}
-
-class ModuleCollection {
-  constructor(rootModule) {
-    this.root = null
-    this.register(rootModule, [])
-  }
-
-  register(rawModule, path) {
-    const newModule = new Module(rawModule)
-    if (path.length === 0) { // 是一个根模块
-      this.root = new Module(rawModule)
-    } else {
-      const parent = path.slice(0, -1).reduce((module, current) => {
-        return module.getChild(current)
-      }, this.root)
-      parent.addChild(path[path.length - 1], newModule)
-    }
-
-    if (rawModule.modules) {
-      forEachValue(rawModule.modules, (rawChildModule, key) => {
-        this.register(rawChildModule, path.concat(key))
-      })
-    }
-  }
+  module.forEachChild((child, key) => {
+    installModule(store, rootState, path.concat(key), child)
+  })
 }
 
 export default class Store {
   constructor(options) {
     const store = this
-    // 为什么要用{}再包裹一层？更好地实现修改state 更新视图
-    store._state = reactive({ data: options.state })
+    store._modules = new ModuleCollection(options)
+    // console.log(this._modules)
 
-  }
-
-  commit = (type, payload) => {
-    this._mutations[type](payload)
-  }
-
-  dispatch = (type, payload) => {
-    this._action[type](payload)
-  }
-
-  get state() {
-    return this._state.data
+    // 定义状态
+    const state = store._modules.root.state
+    installModule(store, state, [], store._modules.root)
+    console.log(state)
   }
 
   install(app, injectKey) {

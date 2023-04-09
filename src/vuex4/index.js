@@ -4,7 +4,7 @@ import { forEachValue } from './utils'
 
 import Store from './store'
 // 创建并且返回一个store
-export function createStore(options) {
+function createStore(options) {
   return new Store(options)
 }
 

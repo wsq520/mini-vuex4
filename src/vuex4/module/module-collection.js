@@ -1,0 +1,30 @@
+import { forEachValue } from '../utils'
+import Module from './module'
+
+export class ModuleCollection {
+  constructor(rootModule) {
+    this.root = null
+    this.register(rootModule, [])
+  }
+
+  register(rawModule, path) {
+    const newModule = new Module(rawModule)
+    if (path.length === 0) { // 是一个根模块
+      this.root = newModule
+    } else {
+      // path.slice(0, -1) 移除最后一个元素
+      // 获取当前子模块的父模块
+      const parent = path.slice(0, -1).reduce((module, current) => {
+        return module.getChild(current)
+      }, this.root)
+      // 将当前模块添加到它父模块中
+      parent.addChild(path[path.length - 1], newModule)
+    }
+
+    if (rawModule.modules) {
+      forEachValue(rawModule.modules, (rawChildModule, key) => {
+        this.register(rawChildModule, path.concat(key))
+      })
+    }
+  }
+}
