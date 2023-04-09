@@ -1,6 +1,7 @@
+import { reactive } from 'vue'
 import { storeKey } from './injectKey'
 import { ModuleCollection } from './module/module-collection'
-import { isPromise } from './utils'
+import { isPromise, forEachValue } from './utils'
 
 // 根据路径 获取store的最新状态
 function getNestedState(state, path) {
@@ -47,6 +48,18 @@ function installModule(store, rootState, path, module) {
   })
 }
 
+function resetStoreState(store, state) {
+  store._state = reactive({ data: state })
+  const wrappedGetters = store._wrappedGetters
+  store.getters = {}
+  forEachValue(wrappedGetters, (getter, key) => {
+    Object.defineProperty(store.getters, key, {
+      get: getter,
+      enumerable: true
+    })
+  })
+}
+
 export default class Store {
   constructor(options) {
     const store = this
@@ -61,6 +74,13 @@ export default class Store {
     const state = store._modules.root.state
     installModule(store, state, [], store._modules.root)
     console.log(state)
+
+    // 给store添加state
+    resetStoreState(store, state)
+  }
+
+  get state() {
+    return this._state.data
   }
 
   install(app, injectKey) {
