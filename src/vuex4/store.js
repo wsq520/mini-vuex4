@@ -83,6 +83,16 @@ export default class Store {
     return this._state.data
   }
 
+  commit = (type, payload) => {
+    const entry = this._mutations[type] || []
+    entry.forEach(handler => handler(payload))
+  }
+
+  dispatch = (type, payload) => {
+    const entry = this._actions[type] || []
+    return Promise.all(entry.map(handler => handler(payload)))
+  }
+
   install(app, injectKey) {
     app.provide(injectKey || storeKey, this)
     // 将当前的store实例添加到全局属性中 那么所有的组件都可以使用它
