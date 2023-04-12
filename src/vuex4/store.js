@@ -5,11 +5,16 @@ import { isPromise, forEachValue } from './utils'
 
 // 根据路径 获取store的最新状态
 function getNestedState(state, path) {
-  return path.reduce((state, key) => state[key], state)
+  return path.reduce((state, key) => {
+    // console.log(state, key)
+    return state[key]
+  }, state)
 }
 
 function installModule(store, rootState, path, module) {
   let isRoot = !path.length
+
+  const namespaced = store._modules.getNamespaced(path)
 
   if (!isRoot) {
     let parentState = path.slice(0, -1).reduce((state, key) => {
@@ -19,13 +24,13 @@ function installModule(store, rootState, path, module) {
   }
 
   module.forEachGetter((getter, key) => {
-    store._wrappedGetters[key] = () => {
+    store._wrappedGetters[namespaced + key] = () => {
       return getter(getNestedState(store.state, path))
     }
   })
 
   module.forEachMutation((mutation, key) => {
-    const entry = store._mutations[key] || (store._mutations[key] = [])
+    const entry = store._mutations[namespaced + key] || (store._mutations[namespaced + key] = [])
     entry.push((payload) => {
       mutation.call(store, getNestedState(store.state, path), payload)
     })
@@ -33,11 +38,11 @@ function installModule(store, rootState, path, module) {
 
   // actions执行完返回是一个promise
   module.forEachAction((action, key) => {
-    const entry = store._actions[key] || (store._actions[key] = [])
+    const entry = store._actions[namespaced + key] || (store._actions[namespaced + key] = [])
     entry.push((payload) => {
       let res = action.call(store, store, payload)
       if (!isPromise(res)) {
-        return Promise.then(res)
+        return Promise.resolve(res)
       }
       return res
     })
@@ -73,7 +78,7 @@ export default class Store {
     // 定义状态
     const state = store._modules.root.state
     installModule(store, state, [], store._modules.root)
-    console.log(state)
+    // console.log(state)
 
     // 给store添加state
     resetStoreState(store, state)

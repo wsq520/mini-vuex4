@@ -5,6 +5,7 @@ export default class Module {
     this._raw = rawModule
     this._children = {}
     this.state = rawModule.state
+    this.namespaced = rawModule.namespaced // 记录自己是否有命名空间
   }
 
   // key 是一个子模块的名字 module就是子模块本身
