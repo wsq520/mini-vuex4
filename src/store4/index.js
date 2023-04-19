@@ -1,6 +1,7 @@
 import { createStore } from "../vuex4"
 
 const store = createStore({
+  strict: true, // 是否开启严格模式(开启之后 状态只能通过 mutation 来修改)
   state: {
     count: 0
   },

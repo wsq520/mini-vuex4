@@ -8,6 +8,8 @@ export class ModuleCollection {
   }
 
   register(rawModule, path) {
+    // console.log(rawModule)
+    // console.log(path)
     const newModule = new Module(rawModule)
     if (path.length === 0) { // 是一个根模块
       this.root = newModule
@@ -15,6 +17,7 @@ export class ModuleCollection {
       // path.slice(0, -1) 移除最后一个元素
       // 获取当前子模块的父模块
       const parent = path.slice(0, -1).reduce((module, current) => {
+        // module是一个模块 而current就是该模块的名字
         return module.getChild(current)
       }, this.root)
       // 将当前模块添加到它父模块中
