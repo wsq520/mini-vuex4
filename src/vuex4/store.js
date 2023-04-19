@@ -110,10 +110,24 @@ export default class Store {
 
     // 给store添加state
     resetStoreState(store, state)
+
+    // 插件
+    store._subscribes = []
+    options.plugins.forEach(plugin => plugin(store))
+  }
+
+  subscribe(fn) {
+    this._subscribes.push(fn)
   }
 
   get state() {
     return this._state.data
+  }
+
+  replaceState(newState) {
+    this._withCommit(() => {
+      this._state.data = newState
+    })
   }
 
   commit = (type, payload) => {
@@ -121,6 +135,7 @@ export default class Store {
     this._withCommit(() => {
       entry.forEach(handler => handler(payload))
     })
+    this._subscribes.forEach(sub => sub({ type, payload }, this.state))
   }
 
   dispatch = (type, payload) => {
