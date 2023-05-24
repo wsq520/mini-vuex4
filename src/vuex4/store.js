@@ -1,4 +1,4 @@
-import { reactive, watch } from 'vue'
+import { reactive, watch, computed } from 'vue'
 import { storeKey } from './injectKey'
 import { ModuleCollection } from './module/module-collection'
 import { isPromise, forEachValue } from './utils'
@@ -30,6 +30,7 @@ function installModule(store, rootState, path, module) {
   })
 
   module.forEachMutation((mutation, key) => {
+    // entry 和 store._mutations[namespaced + key] 指向的是同一块空间
     const entry = store._mutations[namespaced + key] || (store._mutations[namespaced + key] = [])
     entry.push((payload) => {
       mutation.call(store, getNestedState(store.state, path), payload)
@@ -59,7 +60,7 @@ function resetStoreState(store, state) {
   store.getters = {}
   forEachValue(wrappedGetters, (getter, key) => {
     Object.defineProperty(store.getters, key, {
-      get: getter,
+      get: computed(() => getter()),
       enumerable: true
     })
   })
@@ -108,7 +109,7 @@ export default class Store {
     // console.log(store)
     // console.log(state)
 
-    // 给store添加state
+    // 将格式化后的state添加到store.state上
     resetStoreState(store, state)
 
     // 插件

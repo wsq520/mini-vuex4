@@ -7,9 +7,8 @@ export class ModuleCollection {
     this.register(rootModule, [])
   }
 
+  // 将子模块存储到对应的父模块的_children中
   register(rawModule, path) {
-    // console.log(rawModule)
-    // console.log(path)
     const newModule = new Module(rawModule)
     if (path.length === 0) { // 是一个根模块
       this.root = newModule
